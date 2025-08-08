@@ -7,17 +7,13 @@ use rand::Rng;
 pub struct WorksheetGenerator {
     rows: u32,
     wsep: u32,
+    show_answers: bool,
 }
 
 impl WorksheetGenerator {
     /// Creates a new worksheet generator with the specified layout parameters
-    pub fn new(rows: u32, wsep: u32) -> Self {
-        // Even if cols is passed, the new logic will fix it to 3 types of problems per row.
-        // We could assert cols == 3 or ignore the input `cols` if it's fixed.
-        // For now, let's assume the intention is that each row has these 3 problems.
-        // If `cols` from args is meant to repeat this 3-problem pattern, the logic would differ.
-        // Based on "每一行是3列", it means a fixed 3 columns per row.
-        Self { rows, wsep } // Forcing cols to 3 as per new requirement
+    pub fn new(rows: u32, wsep: u32, show_answers: bool) -> Self {
+        Self { rows, wsep, show_answers }
     }
 
     /// Generates the specified number of worksheet pages
@@ -35,8 +31,10 @@ impl WorksheetGenerator {
         // Print problems
         print!("{}", problems);
 
-        // Print answers
-        print!("{}", answers); // Consider if answers should be on a separate page or section
+        // Print answers if the flag is set
+        if self.show_answers {
+            print!("{}", answers);
+        }
 
         Ok(())
     }
@@ -47,8 +45,6 @@ impl WorksheetGenerator {
         let mut rng = rand::thread_rng();
         let x = rng.gen_range(10..=99);
         let y = rng.gen_range(10..=99);
-        // Ensure result doesn't exceed a certain number of digits if necessary,
-        // e.g., 99 + 99 = 198 (3 digits). This is generally fine.
         TreeNode::build_operation(BinaryOp::Add, x, y)
     }
 
@@ -62,9 +58,6 @@ impl WorksheetGenerator {
         if x < y {
             std::mem::swap(&mut x, &mut y); // Ensure x >= y for a non-negative result
         }
-        // To ensure it's not X - X = 0 too often, though random chance makes this rare.
-        // if x == y { y = rng.gen_range(10..x.saturating_sub(1)) } // Optional: avoid X-X if y can be 0.
-                                                                // Current range 10..=99 prevents y being 0.
         TreeNode::build_operation(BinaryOp::Sub, x, y)
     }
 
@@ -84,9 +77,6 @@ impl WorksheetGenerator {
         let mut answers_text = String::new();
 
         let col_separator = " ".repeat(self.wsep as usize);
-        // Answer separator might need adjustment based on result widths.
-        // Add: XX+XX=YYY (max 3 digits). Sub: XX-XX=YY (max 2 digits). Mul: X*XX=YYY (max 3 digits)
-        // Let's use a slightly more generous answer separator than problem separator to accommodate results.
         let answer_col_separator = " ".repeat((self.wsep as usize).saturating_sub(2).max(4));
 
 
